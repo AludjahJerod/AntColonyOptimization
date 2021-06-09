@@ -36,7 +36,6 @@ public class AntColony {
         //
         //
         //
-        //
     }
 
     private class Ant{
