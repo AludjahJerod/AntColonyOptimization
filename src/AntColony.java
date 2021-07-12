@@ -1,26 +1,27 @@
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
 public class AntColony {
 
-    private double evaporation=0.5;
+    private double evaporation=0.9999;
     private int epochNum=7;
 
     //number of ants (threads)
     private double antNum;
 
     private double a=1;
-    private double b=5;
+    private double b=1;
 
     public double alpha;
     public double beta;
 
     // new trail deposit coefficient;
-    private double Weight = 100;
+    private double Weight = 50;
 
     //critical section
     public int[] bestRoute= new int[7];
-    public double bestValue;
+    public double bestValue=Double.POSITIVE_INFINITY;
 
     public int bestCounter=0;
 
@@ -69,7 +70,7 @@ public class AntColony {
     }
 
     private void Instantiate(){
-        //Linspace... SAD
+        //Linspace
         //
         int size=(int)(Qmax-Qmin)*2;
         size+=2;
@@ -161,8 +162,8 @@ public class AntColony {
         }
 
         public double getObjective(){
-            double cost=0;
-            double peak=0;
+            double cost=1;
+            double peak=1;
 
             for(int cnt=0; cnt<epochNum;cnt++){
                 if(Oi[cnt]>peak)
@@ -178,8 +179,8 @@ public class AntColony {
 
             // evaporation
             for (int i = 0; i < epochNum; i++)
-                for (int j = 0; j < Ti[0].length; j++)
-                    Ti[i][j] *= evaporation;
+                for (int j = 0; j < Ti.length; j++)
+                    Ti[j][i] *= evaporation;
 
             // ant contribution
             double contribution = Weight / getObjective();
@@ -189,16 +190,15 @@ public class AntColony {
 
         private void updateBest() {
 
-            if (bestRoute == null) {
-                bestRoute = path;
-                bestValue = getObjective();
-            }
             if (getObjective() < bestValue) {
                 bestValue = getObjective();
                 bestRoute = path.clone();
                 bestCounter=0;
-            }else if(getObjective()==bestValue){
+                System.out.println("the best value is:" + bestValue);
+                System.out.println(Qi[bestRoute[0]]+","+Qi[bestRoute[1]]+","+Qi[bestRoute[2]]+","+Qi[bestRoute[3]]+","+Qi[bestRoute[4]]+","+Qi[bestRoute[5]]+","+Qi[bestRoute[6]]);
+            }else if(getObjective()==bestValue || getObjective()-bestValue<1){
                 bestCounter++;
+                System.out.println("+");
             }
         }
 
@@ -217,7 +217,7 @@ public class AntColony {
 
                 endWrite();
                 //end of critical section
-            }while (bestCounter<10);
+            }while (bestCounter<5);
         }
 
 
@@ -235,30 +235,54 @@ public class AntColony {
     public void MyAntColony(){
         antNum=5;
         Instantiate();
-//        for(int i=0;i<antNum;i++){
-//            Ant a= new Ant();
-//            a.start();
-//        }
+
+        alpha=1;
+        beta=0;
         Ant a1;
-        //Ant a2,a3,a4,a5;
+        Ant a2,a3,a4,a5,a6,a7,a8,a9,a10;
         a1=new Ant();
-//        a2=new Ant();
-//        a3=new Ant();
-//        a4=new Ant();
-//        a5=new Ant();
+        a2=new Ant();
+        a3=new Ant();
+        a4=new Ant();
+        a5=new Ant();
+        a6=new Ant();
+        a7=new Ant();
+        a8=new Ant();
+        a9=new Ant();
+        a10=new Ant();
         a1.start();
-//        a2.start();
-//        a3.start();
-//        a4.start();
-//        a5.start();
+        a2.start();
+        a3.start();
+        a4.start();
+        a5.start();
+        a6.start();
+        a7.start();
+        a8.start();
+        a9.start();
+        a10.start();
 
+        try {
+            a1.join();
+            a2.join();
+            a3.join();
+            a4.join();
+            a5.join();
+            a6.join();
+            a7.join();
+            a8.join();
+            a9.join();
+            a10.join();
+        } catch ( InterruptedException e ) { }
 
+        System.out.println(bestValue);
+        System.out.println(Arrays.toString(bestRoute));
     }
 
     public static class Demo{
         public static void main(String[] args){
             AntColony myColony = new AntColony();
             myColony.MyAntColony();
+
         }
     }
 
