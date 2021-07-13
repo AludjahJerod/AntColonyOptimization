@@ -76,7 +76,7 @@ public class AntColony {
         size+=2;
         Qi= new double[size];
         Ti= new double[size][epochNum];
-        double val = -750;
+        double val = Qmin;
         for (int i=0;i<size;i++){
             Qi[i]=val;
             for (int j = 0; j<epochNum; j++){
@@ -116,9 +116,14 @@ public class AntColony {
             // end reader
             double denom = 0.0;
             double[] p=new double[Qi.length];
+            double pNeed=0;
+            //check how much power is still needed
+            for(int i=currentLocation; i<epochNum;i++){
+                pNeed+=powerNeeded[i];
+            }
             for (int l = 0; l < Qi.length; l++){
                 //conditions
-                if(Qi[l]+B<Bmin || Qi[l]+B>Bmax ||(discharge && Qi[l]>0))
+                if(Qi[l]+B<Bmin || Qi[l]+B>Bmax ||(discharge && Qi[l]>0) ||(Qi[l]<0 && B-Bmin<pNeed)||(Qi[l]<-powerNeeded[currentLocation]/0.95))
                     p[l]=0;
                 else p[l]= pow(TiCopy[l][currentLocation], a)* pow(1.0 / (Qi[l]-Qi[0]+1), b); //I remove the lowest value in order to remove negative values
                 denom+=p[l];
@@ -162,8 +167,8 @@ public class AntColony {
         }
 
         public double getObjective(){
-            double cost=1;
-            double peak=1;
+            double cost=0;
+            double peak=0;
 
             for(int cnt=0; cnt<epochNum;cnt++){
                 if(Oi[cnt]>peak)
@@ -208,6 +213,7 @@ public class AntColony {
                 for (int i = 0; i < epochNum; i++) {
                     takeRoute(selectNext());
                 }
+                //System.out.println(Qi[path[0]]+","+Qi[path[1]]+","+Qi[path[2]]+","+Qi[path[3]]+","+Qi[path[4]]+","+Qi[path[5]]+","+Qi[path[6]]);
                 getOi();
                 //critical section
                 startWrite();
