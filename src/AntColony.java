@@ -11,16 +11,16 @@ public class AntColony {
     private double antNum;
 
     private double a=1;
-    private double b=5;
+    private double b=1;
 
     public double alpha;
     public double beta;
 
     // new trail deposit coefficient;
-    private double Weight = 10;
+    private double Weight = 20;
 
     //critical section
-    public int[] bestRoute= new int[7];
+    public double[] bestRoute= new double[7];
     public double bestValue=Double.POSITIVE_INFINITY;
 
     public int bestCounter=0;
@@ -29,7 +29,7 @@ public class AntColony {
     public static double[] powerNeeded = new double[] {100,100,100,100,100,200,200};
     public static double Bmin=280;
     public static double Bmax=13720;
-    public static double Qmin=-750;
+    public static double Qmin=-300;
     public static double Qmax=511.5;
 
     //Qi: cost/length of every road
@@ -75,11 +75,11 @@ public class AntColony {
         int size=(int)(Qmax-Qmin)*2;
         size+=2;
         Qi= new double[size];
-        Ti= new double[size][epochNum];
+        Ti= new double[size][epochNum-1];
         double val = Qmin;
         for (int i=0;i<size;i++){
             Qi[i]=val;
-            for (int j = 0; j<epochNum; j++){
+            for (int j = 0; j<epochNum-1; j++){
                 Ti[i][j]=1;
             }
             val+=0.5;
@@ -88,7 +88,7 @@ public class AntColony {
 
     private class Ant extends Thread{
         //path taken
-        public int[] path = new int[epochNum];
+        public int[] path = new int[epochNum-1];
         //Current epoch
         private int currentLocation=0;
         //probabilities of next epoch
@@ -100,10 +100,13 @@ public class AntColony {
         //Intermediate Variable Bi
         private double B=Bmin;
 
+        private int newBest=1;
+
         public void reset(){
             probs= new double[Qi.length];
             currentLocation=0;
             discharge=false;
+            newBest=1;
             B=Bmin;
         }
 
@@ -116,14 +119,14 @@ public class AntColony {
             // end reader
             double denom = 0.0;
             double[] p=new double[Qi.length];
-//            double pNeed=0;
-//            //check how much power is still needed
-//            for(int i=currentLocation; i<epochNum;i++){
-//                pNeed+=powerNeeded[i];
-//            }
+            double pNeed=0;
+            //check how much power is still needed
+            for(int i=currentLocation; i<epochNum;i++){
+                pNeed+=powerNeeded[i];
+            }
             for (int l = 0; l < Qi.length; l++){
                 //conditions
-                if(Qi[l]+B<Bmin || Qi[l]+B>Bmax ||(discharge && Qi[l]>0) ||(Qi[l]<-powerNeeded[currentLocation]/0.95))
+                if(Qi[l]+B<Bmin || Qi[l]+B>Bmax ||(discharge && Qi[l]>0) ||(Qi[l]<-powerNeeded[currentLocation]/0.95) || (Qi[l]>0 && Qi[l]+B-Bmin>pNeed/0.95))
                     p[l]=0;
                 else p[l]= pow(TiCopy[l][currentLocation], a)* pow(1.0 / (Qi[l]-Qi[0]+1), b); //I remove the lowest value in order to remove negative values
                 denom+=p[l];
@@ -146,7 +149,7 @@ public class AntColony {
                     return i;
             }
 
-            throw new RuntimeException("Not supposed to get here.");
+            throw new RuntimeException("Not supposed to get here." + currentLocation);
         }
 
         public void takeRoute(int choice){
@@ -158,12 +161,18 @@ public class AntColony {
         }
 
         public void getOi(){
-            for (int i=0;i<epochNum;i++)
+            double amount=0;
+            for (int i=0;i<epochNum-1;i++) {
                 if (Qi[path[i]] < 0) {
                     Oi[i] = powerNeeded[i] + Qi[path[i]] * 0.95;
                     if (Oi[i] < 0)
                         Oi[i] = 0; //For safety
                 } else Oi[i] = powerNeeded[i] + Qi[path[i]] / 0.93;
+                amount+=Qi[path[i]];
+            }
+
+            if ((Oi[epochNum-1]=powerNeeded[epochNum-1]-amount*0.95)<0)
+                Oi[epochNum-1]=0;
         }
 
         public double getObjective(){
@@ -183,7 +192,7 @@ public class AntColony {
         private void updateTi(){
 
             // evaporation
-            for (int i = 0; i < epochNum; i++)
+            for (int i = 0; i < epochNum-1; i++)
                 for (int j = 0; j < Ti.length; j++)
                     Ti[j][i] *= evaporation;
 
@@ -191,13 +200,13 @@ public class AntColony {
 
             int radius = 5;
             double contribution = Weight / getObjective();
-            for (int i = 0; i < epochNum; i++){
+            for (int i = 0; i < epochNum-1; i++){
                 for (int j = -radius; j<radius; j++){
                     if(j!=0){
                         if(path[i]+j<Ti.length && path[i]+j>0)
                             Ti[path[i]+j][i] += contribution/Math.abs(j);
                     }
-                    else Ti[path[i]+j][i] += 1.5*contribution;
+                    else Ti[path[i]+j][i] += newBest*1.2*contribution;
                 }
 
             }
@@ -206,13 +215,21 @@ public class AntColony {
 
         private void updateBest() {
 
-            if (getObjective() < bestValue) {
-                bestValue = getObjective();
-                bestRoute = path.clone();
+            double val = getObjective()-bestValue;
+            if (val<0) {
+                newBest=2;
+                double amount =0;
+                for(int i=0; i<epochNum-1;i++){
+                    bestRoute[i]=Qi[path[i]];
+                    amount += Qi[path[i]];
+                }
+                bestRoute[epochNum-1]=-amount;
                 bestCounter=0;
+                bestValue = getObjective();
                 System.out.println("the best value is:" + bestValue);
-                System.out.println(Qi[bestRoute[0]]+","+Qi[bestRoute[1]]+","+Qi[bestRoute[2]]+","+Qi[bestRoute[3]]+","+Qi[bestRoute[4]]+","+Qi[bestRoute[5]]+","+Qi[bestRoute[6]]);
-            }else if(getObjective()==bestValue || getObjective()-bestValue<1){
+                System.out.println(bestRoute[0]+","+bestRoute[1]+","+bestRoute[2]+","+bestRoute[3]+","+bestRoute[4]+","+bestRoute[5]+","+bestRoute[6]);
+            }else if(val <1){
+                newBest=2;
                 bestCounter++;
                 System.out.println("+");
             }
@@ -221,7 +238,7 @@ public class AntColony {
         public void run(){
             do {
                 reset();
-                for (int i = 0; i < epochNum; i++) {
+                for (int i = 0; i < epochNum-1; i++) {
                     takeRoute(selectNext());
                 }
                 //System.out.println(Qi[path[0]]+","+Qi[path[1]]+","+Qi[path[2]]+","+Qi[path[3]]+","+Qi[path[4]]+","+Qi[path[5]]+","+Qi[path[6]]);
@@ -229,10 +246,11 @@ public class AntColony {
                 //critical section
                 startWrite();
 
-                double thresh = 400;
+                double thresh = 100;
+
                 if(getObjective()-thresh<bestValue){
-                    updateTi();
                     updateBest();
+                    updateTi();
                 }
 
                 endWrite();
