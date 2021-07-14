@@ -11,13 +11,13 @@ public class AntColony {
     private double antNum;
 
     private double a=1;
-    private double b=1;
+    private double b=5;
 
     public double alpha;
     public double beta;
 
     // new trail deposit coefficient;
-    private double Weight = 50;
+    private double Weight = 10;
 
     //critical section
     public int[] bestRoute= new int[7];
@@ -116,14 +116,14 @@ public class AntColony {
             // end reader
             double denom = 0.0;
             double[] p=new double[Qi.length];
-            double pNeed=0;
-            //check how much power is still needed
-            for(int i=currentLocation; i<epochNum;i++){
-                pNeed+=powerNeeded[i];
-            }
+//            double pNeed=0;
+//            //check how much power is still needed
+//            for(int i=currentLocation; i<epochNum;i++){
+//                pNeed+=powerNeeded[i];
+//            }
             for (int l = 0; l < Qi.length; l++){
                 //conditions
-                if(Qi[l]+B<Bmin || Qi[l]+B>Bmax ||(discharge && Qi[l]>0) ||(Qi[l]<0 && B-Bmin<pNeed)||(Qi[l]<-powerNeeded[currentLocation]/0.95))
+                if(Qi[l]+B<Bmin || Qi[l]+B>Bmax ||(discharge && Qi[l]>0) ||(Qi[l]<-powerNeeded[currentLocation]/0.95))
                     p[l]=0;
                 else p[l]= pow(TiCopy[l][currentLocation], a)* pow(1.0 / (Qi[l]-Qi[0]+1), b); //I remove the lowest value in order to remove negative values
                 denom+=p[l];
@@ -188,9 +188,20 @@ public class AntColony {
                     Ti[j][i] *= evaporation;
 
             // ant contribution
+
+            int radius = 5;
             double contribution = Weight / getObjective();
-            for (int i = 0; i < epochNum; i++)
-                Ti[path[i]][i] += contribution;
+            for (int i = 0; i < epochNum; i++){
+                for (int j = -radius; j<radius; j++){
+                    if(j!=0){
+                        if(path[i]+j<Ti.length && path[i]+j>0)
+                            Ti[path[i]+j][i] += contribution/Math.abs(j);
+                    }
+                    else Ti[path[i]+j][i] += 1.5*contribution;
+                }
+
+            }
+
         }
 
         private void updateBest() {
@@ -218,8 +229,11 @@ public class AntColony {
                 //critical section
                 startWrite();
 
-                updateTi();
-                updateBest();
+                double thresh = 400;
+                if(getObjective()-thresh<bestValue){
+                    updateTi();
+                    updateBest();
+                }
 
                 endWrite();
                 //end of critical section
