@@ -17,7 +17,7 @@ public class AntColony {
     public double beta;
 
     // new trail deposit coefficient;
-    private double Weight = 20;
+    private double Weight = 200;
 
     //critical section
     public double[] bestRoute= new double[7];
