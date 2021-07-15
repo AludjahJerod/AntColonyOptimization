@@ -276,7 +276,6 @@ public class AntColony {
                     updateBest();
                     updateTi();
                 }
-
                 endWrite();
                 //end of critical section
             }while (bestCounter<5);
