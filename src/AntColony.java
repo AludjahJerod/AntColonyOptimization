@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
@@ -8,7 +9,7 @@ public class AntColony {
     private int epochNum=7;
 
     //number of ants (threads)
-    private double antNum;
+    private int antNum;
 
     private double a=1;
     private double b=1;
@@ -19,9 +20,13 @@ public class AntColony {
     // new trail deposit coefficient;
     private double Weight = 200;
 
+    double thresh = 100;
+
     //critical section
     public double[] bestRoute= new double[7];
     public double bestValue=Double.POSITIVE_INFINITY;
+    public ArrayList bestHistory= new ArrayList<Double>();
+    public int historySize=7;
 
     public int bestCounter=0;
 
@@ -29,7 +34,7 @@ public class AntColony {
     public static double[] powerNeeded = new double[] {100,100,100,100,100,200,200};
     public static double Bmin=280;
     public static double Bmax=13720;
-    public static double Qmin=-300;
+    public static double Qmin=-750;
     public static double Qmax=511.5;
 
     //Qi: cost/length of every road
@@ -226,11 +231,27 @@ public class AntColony {
                 bestRoute[epochNum-1]=-amount;
                 bestCounter=0;
                 bestValue = getObjective();
+
+                bestHistory.add(bestValue);
+                if(bestHistory.size()>historySize){
+                    bestHistory.remove(0);
+                    double v=(Double)bestHistory.get(0)- bestValue;
+                    if(v<thresh)
+                        thresh=v;
+                }
                 System.out.println("the best value is:" + bestValue);
                 System.out.println(bestRoute[0]+","+bestRoute[1]+","+bestRoute[2]+","+bestRoute[3]+","+bestRoute[4]+","+bestRoute[5]+","+bestRoute[6]);
             }else if(val <1){
                 newBest=2;
                 bestCounter++;
+
+                bestHistory.add(bestValue);
+                if(bestHistory.size()>historySize){
+                    bestHistory.remove(0);
+                    double v=(Double)bestHistory.get(0)- bestValue;
+                    if(v<thresh)
+                        thresh=v;
+                }
                 System.out.println("+");
             }
         }
@@ -241,12 +262,10 @@ public class AntColony {
                 for (int i = 0; i < epochNum-1; i++) {
                     takeRoute(selectNext());
                 }
-                //System.out.println(Qi[path[0]]+","+Qi[path[1]]+","+Qi[path[2]]+","+Qi[path[3]]+","+Qi[path[4]]+","+Qi[path[5]]+","+Qi[path[6]]);
+                //System.out.println(Qi[path[0]]+","+Qi[path[1]]+","+Qi[path[2]]+","+Qi[path[3]]+","+Qi[path[4]]+","+Qi[path[5]]+",");
                 getOi();
                 //critical section
                 startWrite();
-
-                double thresh = 100;
 
                 if(getObjective()-thresh<bestValue){
                     updateBest();
@@ -271,45 +290,22 @@ public class AntColony {
     }
 
     public void MyAntColony(){
-        antNum=5;
+        antNum=50;
         Instantiate();
 
+        Ant[] workers = new Ant[antNum];
         alpha=1;
         beta=0;
-        Ant a1;
-        Ant a2,a3,a4,a5,a6,a7,a8,a9,a10;
-        a1=new Ant();
-        a2=new Ant();
-        a3=new Ant();
-        a4=new Ant();
-        a5=new Ant();
-        a6=new Ant();
-        a7=new Ant();
-        a8=new Ant();
-        a9=new Ant();
-        a10=new Ant();
-        a1.start();
-        a2.start();
-        a3.start();
-        a4.start();
-        a5.start();
-        a6.start();
-        a7.start();
-        a8.start();
-        a9.start();
-        a10.start();
-
+        
+        for(int i =0; i<antNum; i++){
+            workers[i]= new Ant();
+            workers[i].start();
+        }
+        
         try {
-            a1.join();
-            a2.join();
-            a3.join();
-            a4.join();
-            a5.join();
-            a6.join();
-            a7.join();
-            a8.join();
-            a9.join();
-            a10.join();
+            for (Ant ant:workers) {
+                ant.join();
+            }
         } catch ( InterruptedException e ) { }
 
         System.out.println(bestValue);
