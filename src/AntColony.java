@@ -21,6 +21,7 @@ public class AntColony {
     private double Weight = 200;
 
     double thresh = 100;
+    double step=0.5;
 
     //critical section
     public double[] bestRoute= new double[7];
@@ -46,39 +47,39 @@ public class AntColony {
 
     //ReaderWriter
     int numReaders = 0;
-    Semaphore mutex = new Semaphore(1);
-    Semaphore lock = new Semaphore(1);
+    Semaphore readLock = new Semaphore(50);
+    Semaphore writeLock = new Semaphore(1);
 
     public void startRead() {
         try {
-            mutex.acquire();
+            readLock.acquire();
             numReaders++;
-            if (numReaders == 1) lock.acquire();
-            mutex.release();
+            if (numReaders == 1) writeLock.acquire();
+            readLock.release();
         } catch (InterruptedException e) { e.printStackTrace(); }
     }
     public void endRead() {
         try {
-            mutex.acquire();
+            readLock.acquire();
             numReaders--;
-            if (numReaders == 0) lock.release();
-            mutex.release();
+            if (numReaders == 0) writeLock.release();
+            readLock.release();
         } catch (InterruptedException e) { e.printStackTrace(); }
     }
     public void startWrite() {
         try {
-            lock.acquire();
+            writeLock.acquire();
         } catch (InterruptedException e) { e.printStackTrace(); }
     }
     public void endWrite() {
-        lock.release();
+        writeLock.release();
     }
 
     private void Instantiate(){
         //Linspace
         //
-        int size=(int)(Qmax-Qmin)*2;
-        size+=2;
+        int size=(int)Math.round((Qmax-Qmin)/step);
+        size+=1;
         Qi= new double[size];
         Ti= new double[size][epochNum-1];
         double val = Qmin;
@@ -87,8 +88,10 @@ public class AntColony {
             for (int j = 0; j<epochNum-1; j++){
                 Ti[i][j]=1;
             }
-            val+=0.5;
+            val+=step;
         }
+        System.out.println(Qi[size-1]);
+        readLock=new Semaphore(antNum);
     }
 
     private class Ant extends Thread{
@@ -203,7 +206,7 @@ public class AntColony {
 
             // ant contribution
 
-            int radius = 5;
+            int radius = 3;
             double contribution = Weight / getObjective();
             for (int i = 0; i < epochNum-1; i++){
                 for (int j = -radius; j<radius; j++){
