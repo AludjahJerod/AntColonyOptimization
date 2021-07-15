@@ -1,6 +1,9 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.concurrent.Semaphore;
 
 public class AntColony {
@@ -9,13 +12,13 @@ public class AntColony {
     private int epochNum=7;
 
     //number of ants (threads)
-    private int antNum;
+    public static int antNum;
 
     private double a=1;
     private double b=1;
 
-    public double alpha;
-    public double beta;
+    public static double alpha;
+    public static double beta;
 
     // new trail deposit coefficient;
     private double Weight = 200;
@@ -44,7 +47,6 @@ public class AntColony {
     private double[][] Ti = null;//critical common data
 
     private Random rand = new Random();
-
     //ReaderWriter
     int numReaders = 0;
     Semaphore readLock = new Semaphore(50);
@@ -293,12 +295,10 @@ public class AntColony {
     }
 
     public void MyAntColony(){
-        antNum=50;
+
         Instantiate();
 
         Ant[] workers = new Ant[antNum];
-        alpha=1;
-        beta=0;
         
         for(int i =0; i<antNum; i++){
             workers[i]= new Ant();
@@ -317,6 +317,27 @@ public class AntColony {
 
     public static class Demo{
         public static void main(String[] args){
+            //reading from text file
+
+            File file = new File("src/java.txt");
+            try {
+                Scanner sc = new Scanner(file);
+                double[] p =new double[17];
+                int i=0;
+                while (sc.hasNextDouble()){
+
+                    p[i]=sc.nextDouble();
+                    i++;
+                }
+                System.out.println(Arrays.toString(p));
+                powerNeeded=Arrays.copyOfRange(p,0,7);
+                tarifs= Arrays.copyOfRange(p,7,14);
+                alpha= p[14];
+                beta= p[15];
+                antNum=(int)p[16];
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
             AntColony myColony = new AntColony();
             myColony.MyAntColony();
 
