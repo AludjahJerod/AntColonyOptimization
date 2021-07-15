@@ -30,12 +30,12 @@ public class AntColony {
     public double[] bestRoute= new double[7];
     public double bestValue=Double.POSITIVE_INFINITY;
     public ArrayList bestHistory= new ArrayList<Double>();
-    public int historySize=7;
+    public int historySize=6;
 
     public int bestCounter=0;
 
-    public static double[] tarifs= new double[] {2.686, 2.462, 2.379,3.074,4.718,4.752,3.835};
-    public static double[] powerNeeded = new double[] {100,100,100,100,100,200,200};
+    public static double[] tarifs;
+    public static double[] powerNeeded;
     public static double Bmin=280;
     public static double Bmax=13720;
     public static double Qmin=-750;
@@ -49,7 +49,7 @@ public class AntColony {
     private Random rand = new Random();
     //ReaderWriter
     int numReaders = 0;
-    Semaphore readLock = new Semaphore(50);
+    Semaphore readLock = new Semaphore(1);
     Semaphore writeLock = new Semaphore(1);
 
     public void startRead() {
@@ -92,8 +92,6 @@ public class AntColony {
             }
             val+=step;
         }
-        System.out.println(Qi[size-1]);
-        readLock=new Semaphore(antNum);
     }
 
     private class Ant extends Thread{
@@ -208,7 +206,7 @@ public class AntColony {
 
             // ant contribution
 
-            int radius = 3;
+            int radius = 5;
             double contribution = Weight / getObjective();
             for (int i = 0; i < epochNum-1; i++){
                 for (int j = -radius; j<radius; j++){
@@ -244,7 +242,7 @@ public class AntColony {
                     if(v<thresh)
                         thresh=v;
                 }
-                System.out.println("the best value is:" + bestValue);
+                System.out.println("the newest best value is:" + bestValue);
                 System.out.println(bestRoute[0]+","+bestRoute[1]+","+bestRoute[2]+","+bestRoute[3]+","+bestRoute[4]+","+bestRoute[5]+","+bestRoute[6]);
             }else if(val <1){
                 newBest=2;
@@ -280,8 +278,6 @@ public class AntColony {
                 //end of critical section
             }while (bestCounter<5);
         }
-
-
     }
     // Important facts:
     // - >25 times faster
@@ -310,7 +306,7 @@ public class AntColony {
             }
         } catch ( InterruptedException e ) { }
 
-        System.out.println(bestValue);
+        System.out.println("THE BEST VALUE IS:"+bestValue);
         System.out.println(Arrays.toString(bestRoute));
     }
 
@@ -339,7 +335,6 @@ public class AntColony {
             }
             AntColony myColony = new AntColony();
             myColony.MyAntColony();
-
         }
     }
 
