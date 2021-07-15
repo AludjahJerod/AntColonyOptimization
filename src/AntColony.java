@@ -244,7 +244,7 @@ public class AntColony {
                 }
                 System.out.println("the newest best value is:" + bestValue);
                 System.out.println(bestRoute[0]+","+bestRoute[1]+","+bestRoute[2]+","+bestRoute[3]+","+bestRoute[4]+","+bestRoute[5]+","+bestRoute[6]);
-            }else if(val <1){
+            }else if(val <2){
                 newBest=2;
                 bestCounter++;
 
@@ -307,7 +307,7 @@ public class AntColony {
         } catch ( InterruptedException e ) { }
 
         System.out.println("THE BEST VALUE IS:"+bestValue);
-        System.out.println(Arrays.toString(bestRoute));
+        System.out.println("Resulting Qi are:" + Arrays.toString(bestRoute));
     }
 
     public static class Demo{
